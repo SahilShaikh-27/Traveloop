@@ -1,0 +1,104 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String?
+  avatar       String?
+  role         String   @default("user") // "user" | "admin"
+  language     String   @default("en")
+  trips        Trip[]
+  notes        Note[]
+  savedDestinations SavedDestination[]
+  createdAt    DateTime @default(now())
+}
+
+model Trip {
+  id          String      @id @default(cuid())
+  title       String
+  description String?
+  vibe        String?
+  coverImage  String?
+  startDate   DateTime
+  endDate     DateTime
+  totalBudget   Float
+  currency      String      @default("INR")
+  planningStyle String      @default("balanced") // "cheapest"|"explorer"|"balanced"|"premium"|"luxury"
+  isPublic    Boolean     @default(false)
+  publicSlug  String?     @unique
+  userId      String
+  user        User        @relation(fields: [userId], references: [id])
+  stops       TripStop[]
+  checklist   PackItem[]
+  notes       Note[]
+  createdAt   DateTime    @default(now())
+}
+
+model TripStop {
+  id         String     @id @default(cuid())
+  tripId     String
+  trip       Trip       @relation(fields: [tripId], references: [id])
+  cityName   String
+  country    String
+  dayNumber  Int?
+  coverImage String?
+  startDate  DateTime
+  endDate    DateTime
+  order      Int
+  activities Activity[]
+}
+
+model Activity {
+  id            String   @id @default(cuid())
+  tripStopId    String
+  tripStop      TripStop @relation(fields: [tripStopId], references: [id])
+  name          String
+  time          String?  // e.g. "09:00 AM"
+  category      String   // "food"|"sightseeing"|"transport"|"stay"|"adventure"
+  estimatedCost Float
+  duration      Int      // minutes
+  image         String?
+  notes         String?
+  order         Int
+}
+
+model PackItem {
+  id       String  @id @default(cuid())
+  tripId   String
+  trip     Trip    @relation(fields: [tripId], references: [id])
+  name     String
+  category String  // "clothing"|"documents"|"electronics"|"toiletries"|"other"
+  isPacked Boolean @default(false)
+}
+
+model Note {
+  id         String   @id @default(cuid())
+  tripId     String?
+  trip       Trip?     @relation(fields: [tripId], references: [id])
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  tripStopId String?
+  content    String
+  isPinned   Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+model SavedDestination {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  name      String
+  country   String?
+  image     String?
+  notes     String?
+  sourceSlug String?
+  createdAt DateTime @default(now())
+}
